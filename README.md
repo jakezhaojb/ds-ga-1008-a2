@@ -5,7 +5,7 @@ This set of code is modified from Sergey Zagoruyko's cifar.torch tutorial: [cifa
 
 Data processing:
 
-``bash
+```bash
 th -i provider.lua
 ```
 
