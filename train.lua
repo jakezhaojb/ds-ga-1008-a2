@@ -57,15 +57,15 @@ print(model)
 print(c.blue '==>' ..' loading data')
 provider = torch.load 'provider.t7'
 provider.trainData.data = provider.trainData.data:float()
-provider.testData.data = provider.testData.data:float()
+provider.valData.data = provider.valData.data:float()
 
 confusion = optim.ConfusionMatrix(10)
 
 print('Will save at '..opt.save)
 paths.mkdir(opt.save)
-testLogger = optim.Logger(paths.concat(opt.save, 'test.log'))
-testLogger:setNames{'% mean class accuracy (train set)', '% mean class accuracy (test set)'}
-testLogger.showPlot = false
+valLogger = optim.Logger(paths.concat(opt.save, 'val.log'))
+valLogger:setNames{'% mean class accuracy (train set)', '% mean class accuracy (val set)'}
+valLogger.showPlot = false
 
 parameters,gradParameters = model:getParameters()
 
@@ -113,6 +113,7 @@ function train()
       local df_do = criterion:backward(outputs, targets)
       model:backward(inputs, df_do)
 
+      print({inputs, outputs, targets})
       confusion:batchAdd(outputs, targets)
 
       return f,gradParameters
@@ -131,30 +132,30 @@ function train()
 end
 
 
-function test()
+function val()
   -- disable flips, dropouts and batch normalization
   model:evaluate()
-  print(c.blue '==>'.." testing")
+  print(c.blue '==>'.." valing")
   local bs = 125
-  for i=1,provider.testData.data:size(1),bs do
-    local outputs = model:forward(provider.testData.data:narrow(1,i,bs))
-    confusion:batchAdd(outputs, provider.testData.labels:narrow(1,i,bs))
+  for i=1,provider.valData.data:size(1),bs do
+    local outputs = model:forward(provider.valData.data:narrow(1,i,bs))
+    confusion:batchAdd(outputs, provider.valData.labels:narrow(1,i,bs))
   end
 
   confusion:updateValids()
-  print('Test accuracy:', confusion.totalValid * 100)
+  print('val accuracy:', confusion.totalValid * 100)
   
-  if testLogger then
+  if valLogger then
     paths.mkdir(opt.save)
-    testLogger:add{train_acc, confusion.totalValid * 100}
-    testLogger:style{'-','-'}
-    testLogger:plot()
+    valLogger:add{train_acc, confusion.totalValid * 100}
+    valLogger:style{'-','-'}
+    valLogger:plot()
 
     local base64im
     do
-      os.execute(('convert -density 200 %s/test.log.eps %s/test.png'):format(opt.save,opt.save))
-      os.execute(('openssl base64 -in %s/test.png -out %s/test.base64'):format(opt.save,opt.save))
-      local f = io.open(opt.save..'/test.base64')
+      os.execute(('convert -density 200 %s/val.log.eps %s/val.png'):format(opt.save,opt.save))
+      os.execute(('openssl base64 -in %s/val.png -out %s/val.base64'):format(opt.save,opt.save))
+      local f = io.open(opt.save..'/val.base64')
       if f then base64im = f:read'*all' end
     end
 
@@ -181,7 +182,7 @@ function test()
   end
 
   -- save model every 50 epochs
-  if epoch % 50 == 0 then
+  if epoch % 5 == 0 then
     local filename = paths.concat(opt.save, 'model.net')
     print('==> saving model to '..filename)
     torch.save(filename, model:get(3):clearState())
@@ -193,7 +194,7 @@ end
 
 for i=1,opt.max_epoch do
   train()
-  test()
+  val()
 end
 
 
