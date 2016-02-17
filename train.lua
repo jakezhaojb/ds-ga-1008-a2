@@ -6,7 +6,7 @@ local c = require 'trepl.colorize'
 
 opt = lapp[[
    -s,--save                  (default "logs")      subdirectory to save logs
-   -b,--batchSize             (default 128)          batch size
+   -b,--batchSize             (default 32)          batch size
    -r,--learningRate          (default 1)        learning rate
    --learningRateDecay        (default 1e-7)      learning rate decay
    --weightDecay              (default 0.0005)      weightDecay
@@ -113,7 +113,6 @@ function train()
       local df_do = criterion:backward(outputs, targets)
       model:backward(inputs, df_do)
 
-      print({inputs, outputs, targets})
       confusion:batchAdd(outputs, targets)
 
       return f,gradParameters
