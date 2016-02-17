@@ -6,7 +6,7 @@ local c = require 'trepl.colorize'
 
 opt = lapp[[
    -s,--save                  (default "logs")      subdirectory to save logs
-   -b,--batchSize             (default 32)          batch size
+   -b,--batchSize             (default 64)          batch size
    -r,--learningRate          (default 1)        learning rate
    --learningRateDecay        (default 1e-7)      learning rate decay
    --weightDecay              (default 0.0005)      weightDecay
@@ -135,7 +135,7 @@ function val()
   -- disable flips, dropouts and batch normalization
   model:evaluate()
   print(c.blue '==>'.." valing")
-  local bs = 125
+  local bs = 25
   for i=1,provider.valData.data:size(1),bs do
     local outputs = model:forward(provider.valData.data:narrow(1,i,bs))
     confusion:batchAdd(outputs, provider.valData.labels:narrow(1,i,bs))
@@ -184,7 +184,7 @@ function val()
   if epoch % 5 == 0 then
     local filename = paths.concat(opt.save, 'model.net')
     print('==> saving model to '..filename)
-    torch.save(filename, model:get(3):clearState())
+    torch.save(filename, model:get(3))
   end
 
   confusion:zero()
