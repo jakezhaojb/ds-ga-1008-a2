@@ -2,8 +2,25 @@ require 'nn'
 require 'image'
 require 'xlua'
 
-paths.dofile('data_parse.lua')
 torch.setdefaulttensortype('torch.FloatTensor')
+
+-- parse STL-10 data from table into Tensor
+function parseDataLabel(d, numSamples, numChannels, height, width)
+   local t = torch.ByteTensor(numSamples, numChannels, height, width)
+   local l = torch.ByteTensor(numSamples)
+   local idx = 1
+   for i = 1, #d do
+      local this_d = d[i]
+      for j = 1, #this_d do
+    t[idx]:copy(this_d[j])
+    l[idx] = i
+    idx = idx + 1
+      end
+   end
+   assert(idx == numSamples+1)
+   return t, l
+end
+
 
 local Provider = torch.class 'Provider'
 
